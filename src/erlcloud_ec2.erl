@@ -3091,7 +3091,8 @@ run_instances(InstanceSpec, Config)
               {"DisableApiTermination", InstanceSpec#ec2_instance_spec.disable_api_termination},
               {"InstanceInitiatedShutdownBehavior", InstanceSpec#ec2_instance_spec.instance_initiated_shutdown_behavior},
               {"EbsOptimized", InstanceSpec#ec2_instance_spec.ebs_optimized},
-              {"IamInstanceProfile.Name", InstanceSpec#ec2_instance_spec.iam_instance_profile_name}
+              {"IamInstanceProfile.Name", InstanceSpec#ec2_instance_spec.iam_instance_profile_name},
+              {"DryRun", InstanceSpec#ec2_instance_spec.dry_run}
              ],
     NetParams = case InstanceSpec#ec2_instance_spec.net_if of
         [] ->

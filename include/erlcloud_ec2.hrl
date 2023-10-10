@@ -46,7 +46,8 @@
           ebs_optimized = false :: boolean(),
           iam_instance_profile_name :: undefined | string(),
           spot_price::undefined | string(),
-          weighted_capacity::undefined | number()
+          weighted_capacity::undefined | number(),
+          dry_run=false::boolean()
          }).
 -record(ec2_image_spec, {
           image_location::string(),
