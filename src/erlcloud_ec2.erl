@@ -207,7 +207,10 @@
          describe_launch_template_versions/4, describe_launch_template_versions/5,
          describe_launch_template_versions/6, describe_launch_template_versions/7,
 
-         describe_launch_template_versions_all/2, describe_launch_template_versions_all/3
+         describe_launch_template_versions_all/2, describe_launch_template_versions_all/3,
+
+        % Generic Action handler
+        ec2_query/3, ec2_query/4
     ]).
 
 -import(erlcloud_xml, [get_text/1, get_text/2, get_text/3, get_bool/2, get_list/2, get_integer/2]).
@@ -2726,7 +2729,8 @@ register_image(ImageSpec, Config) ->
               {"Architecture", ImageSpec#ec2_image_spec.architecture},
               {"KernelId", ImageSpec#ec2_image_spec.kernel_id},
               {"RamdiskId", ImageSpec#ec2_image_spec.ramdisk_id},
-              {"RootDeviceName", ImageSpec#ec2_image_spec.root_device_name}
+              {"RootDeviceName", ImageSpec#ec2_image_spec.root_device_name},
+              {"DryRun", ImageSpec#ec2_image_spec.dry_run}
              ],
     BDParams = block_device_params(ImageSpec#ec2_image_spec.block_device_mapping),
     case ec2_query(Config, "RegisterImage", Params ++ BDParams) of
@@ -2779,6 +2783,7 @@ request_spot_instances(Request, Config) ->
               {"ValidUntil", Request#ec2_spot_instance_request.valid_until},
               {"LaunchGroup", Request#ec2_spot_instance_request.launch_group},
               {"AvailabilityZoneGroup", Request#ec2_spot_instance_request.availability_zone_group},
+              {"DryRun", InstanceSpec#ec2_spot_instance_request.dry_run},
               {"LaunchSpecification.ImageId", InstanceSpec#ec2_instance_spec.image_id},
               {"LaunchSpecification.KeyName", InstanceSpec#ec2_instance_spec.key_name},
               {"LaunchSpecification.UserData",

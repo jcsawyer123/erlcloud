@@ -57,7 +57,8 @@
           kernel_id::string(),
           ramdisk_id::string(),
           root_device_name::string(),
-          block_device_mapping=[]::[ec2_block_device_mapping()]
+          block_device_mapping=[]::[ec2_block_device_mapping()],
+          dry_run=false::boolean()
          }).
 -record(ec2_spot_instance_request, {
           spot_price::string(),
@@ -67,7 +68,8 @@
           valid_until::datetime(),
           launch_group::string(),
           availability_zone_group::string(),
-          launch_specification::#ec2_instance_spec{}
+          launch_specification::#ec2_instance_spec{},
+          dry_run=false::boolean()
          }).
 -record(spot_fleet_request_config_spec, {
           allocation_strategy::undefined|lowest_price|diversified,
@@ -79,7 +81,8 @@
           target_capacity::pos_integer(),
           terminate_instances_with_expiration::undefined|true|false,
           valid_from::undefined|datetime(),
-          valid_until::undefined|datetime()
+          valid_until::undefined|datetime(),
+          dry_run=false::boolean()
          }).
 -record(ec2_spot_fleet_request, {
           spot_fleet_request_config::#spot_fleet_request_config_spec{}
