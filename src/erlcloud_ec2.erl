@@ -210,7 +210,10 @@
          describe_launch_template_versions_all/2, describe_launch_template_versions_all/3,
 
         % Generic Action handler
-        ec2_query/3, ec2_query/4
+        ec2_query/3, ec2_query/4, 
+
+        % Exports for testing
+        extract_results/4, extract_reservation/1
     ]).
 
 -import(erlcloud_xml, [get_text/1, get_text/2, get_text/3, get_bool/2, get_list/2, get_integer/2]).
