@@ -207,7 +207,10 @@
          describe_launch_template_versions/4, describe_launch_template_versions/5,
          describe_launch_template_versions/6, describe_launch_template_versions/7,
 
-         describe_launch_template_versions_all/2, describe_launch_template_versions_all/3
+         describe_launch_template_versions_all/2, describe_launch_template_versions_all/3,
+
+        % Generic Action handler
+        query/4
     ]).
 
 -import(erlcloud_xml, [get_text/1, get_text/2, get_text/3, get_bool/2, get_list/2, get_integer/2]).
@@ -270,6 +273,11 @@
 -type ec2_flow_ids() :: [flow_id()].
 -type launch_template_ids() :: [string()].
 
+-type query_opts() :: #{
+    api_version => string(),
+    filter => filter_list(),
+    response_format => map | none
+}.
 
 -spec new(string(), string()) -> aws_config().
 new(AccessKeyID, SecretAccessKey) ->
@@ -1460,6 +1468,7 @@ describe_instances(InstanceIDs, Config)
 describe_instances(InstanceIDs, Filter, Config)
     when is_list(InstanceIDs), is_list(Filter) orelse Filter =:= none , is_record(Config, aws_config) ->
     Params = erlcloud_aws:param_list(InstanceIDs, "InstanceId") ++ list_to_ec2_filter(Filter),
+    io:format("Params ~p~n", [Params]),
     case ec2_query(Config, "DescribeInstances", Params, ?NEW_API_VERSION) of
         {ok, Doc} ->
             Results = extract_results("DescribeInstancesResponse", "reservationSet", fun extract_reservation/1, Doc),
@@ -3574,8 +3583,66 @@ ec2_query(Config, Action, Params, ApiVersion) ->
                                   Config#aws_config.ec2_port,
                                   "/", QParams, "ec2", Config).
 
-default_config() -> erlcloud_aws:default_config().
+% Exported Query Function with parameter handling
+% Query takes in: 
+% - an aws_config
+%   - an ec2 action string: list of possible are found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/OperationList-query-ec2.html
+% - a map of query parameters: An example can be found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
+    % NOTE: Any fields in the documentation that end in ".N", may just store a list - No need to include ".N".   
 
+-spec query(aws_config(), string(), map(), query_opts()) -> ok_error().
+query(Config, Action, Params, Opts) ->
+    % NewOpts = maps:merge(?OPT_DEFAULTS, Params),
+    ApiVersion= maps:get(version, Opts, ?API_VERSION),
+    Filter = maps:get(filter, Opts, []),
+    ResponseFormat = maps:get(response_format, Opts, undef),
+    erlcloud_aws:parse_response(do_query(Config, Action, Params, Filter, ApiVersion), ResponseFormat).
+
+do_query(Config, Action, MapParams, Filter, ApiVersion) -> 
+    Params = prepare_action_params(MapParams, Filter),
+    io:format("Params ~p~n", [Params]),
+    case ec2_query(Config, Action, Params, ApiVersion) of
+        {ok, Results} ->
+            {ok, Results};
+        {error, _} = E -> E
+    end.
+
+% Take parameters in map form, as specified in https://docs.aws.amazon.com/AWSEC2/latest/APIReference/OperationList-query-ec2.html
+% and a list for filters 
+prepare_action_params(ParamsMap, []) when is_map(ParamsMap) ->
+    map_to_params(ParamsMap);
+prepare_action_params(ParamsMap, Filters) when is_map(ParamsMap) ->
+    map_to_params(ParamsMap) ++ list_to_ec2_filter(Filters). % Add the filters 
+
+% Take a map of parameters as specified in https://docs.aws.amazon.com/AWSEC2/latest/APIReference/OperationList-query-ec2.html
+% Handles the formatting of the parameters, such as lists, and nested maps
+map_to_params(Map) ->
+    map_to_params(Map, <<>>).                                        
+map_to_params(Map, ParentKey) when is_map(Map) ->
+    MapList = maps:fold(fun
+        (Key, Value, Acc) ->
+            [ map_to_params({Key, Value}, ParentKey) | Acc]
+    end, [], Map),
+    lists:flatten(MapList);
+map_to_params({Key, Val}, ParentKey) when is_map(Val) ->
+    map_to_params(Val, erlcloud_aws:concat_key(ParentKey, Key));
+map_to_params({Key, Val}, ParentKey) when is_list(Val) ->          
+    generate_param_list(erlcloud_aws:concat_key(ParentKey, Key), Val);
+map_to_params({_Key, []}, _ParentKey) ->
+    [];
+map_to_params({Key, Val}, ParentKey) ->
+    {erlcloud_aws:concat_key(ParentKey, Key), Val}.
+
+% Takes a list and converts to {Key.N, Value}
+generate_param_list(Key, Values) ->
+    generate_param_list(Key, Values, 1, []).
+generate_param_list(_, [], _, Acc) ->
+    lists:reverse(Acc);
+generate_param_list(Key, [Value | Rest], Index, Acc) ->
+    NewKey = erlcloud_aws:concat_key(Key, integer_to_list(Index)),
+    generate_param_list(Key, Rest, Index + 1, [{NewKey, Value} | Acc]).    
+
+% Take FilterList and convert it to format [{Filter.N.Key, Value}, ...] 
 list_to_ec2_filter(none) ->
     [];
 list_to_ec2_filter(List) ->
@@ -3583,9 +3650,8 @@ list_to_ec2_filter(List) ->
 
 list_to_ec2_filter([], _Count, Res) ->
     Res;
-list_to_ec2_filter([{N, V}|T], Count, Res)
-    when is_atom(N) ->
-    NewName = [case Char of $_ -> $-; _ -> Char end || Char <- atom_to_list(N)],
+list_to_ec2_filter([{N, V}|T], Count, Res) when is_atom(N) ->
+    NewName = erlcloud_aws:value_to_string(N), 
     list_to_ec2_filter([{NewName, V}|T], Count, Res);
 list_to_ec2_filter([{N, V}|T], Count, Res) ->
     Tup = {io_lib:format("Filter.~p.Name", [Count]), N},
@@ -3599,6 +3665,8 @@ list_to_ec2_values([H|T], Count, VCount, Res) when is_list(H) ->
     list_to_ec2_values(T, Count, VCount + 1, [Tup|Res]);
 list_to_ec2_values(V, Count, VCount, _Res) ->
     {io_lib:format("Filter.~p.Value.~p", [Count, VCount]), V}.
+
+default_config() -> erlcloud_aws:default_config().
 
 -spec describe_vpn_gateways() -> ok_error([proplist()]).
 describe_vpn_gateways() ->

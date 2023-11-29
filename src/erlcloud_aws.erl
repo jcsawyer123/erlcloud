@@ -25,7 +25,10 @@
          get_service_status/1,
          is_throttling_error_response/1,
          get_timeout/1,
-         profile/0, profile/1, profile/2
+         profile/0, profile/1, profile/2,
+         concat_key/2,
+         to_bitstring/1,value_to_string/1,
+         parse_response/2,
 ]).
 
 -include("erlcloud.hrl").
@@ -41,6 +44,17 @@
 -define(AWS_SECRET,  ["AWS_SECRET_ACCESS_KEY"]).
 -define(AWS_SESSION, ["AWS_SESSION_TOKEN", "AWS_SECURITY_TOKEN"]).
 -define(AWS_REGION,  ["AWS_DEFAULT_REGION", "AWS_REGION"]).
+
+%% Possible Query Opts
+-type query_opts() :: #{
+    api_version => string(),
+    filter => filter_list(),
+    response_format => map | none,
+    http_method => get | post | put | patch | delete
+}.
+
+-type filter_list() :: [{string() | atom(),[string()] | string()}] | none.
+-type ok_error() :: ok | {error, term()}.
 
 %% types
 -type http_client_result() :: erlcloud_httpc:result().
@@ -1572,3 +1586,30 @@ maybe_imdsv2_session_token(Config) ->
         {ok, Token} -> Token;
         _Error -> undefined
     end.
+
+%%%%%%%%%%%%%%%%%
+
+% Takes the query response and turns it into a map if desired
+parse_response({ok, Response}, map) ->
+    {ok, _Res} = erlcloud_xml:xml_to_map(Response);
+parse_response({ok, Response}, _) ->
+    {ok, Response};
+parse_response({error, _} = ErrRes, _Format) -> 
+    ErrRes.
+
+concat_key(<<>>, Key) when is_bitstring(Key); is_atom(Key)  ->
+    to_bitstring(Key);
+concat_key(<<>>, Key) when is_list(Key) -> 
+    Key;
+concat_key(ParentKey, Key) ->
+    BiParentKey = to_bitstring(ParentKey),
+    BiKey = to_bitstring(Key),
+    <<BiParentKey/binary, ".", BiKey/binary>>.
+
+%%% Conversions
+to_bitstring(In) when is_bitstring(In) ->
+    In;
+to_bitstring(In) when is_list(In) ->
+    list_to_binary(In);
+to_bitstring(In) when is_atom(In) ->
+    erlang:atom_to_binary(In, utf8).
