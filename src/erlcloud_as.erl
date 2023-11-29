@@ -31,7 +31,7 @@
          complete_lifecycle_action/4, complete_lifecycle_action/5,
          record_lifecycle_action_heartbeat/3, record_lifecycle_action_heartbeat/4,
 
-         query/4
+         query/4,prepare_action_params/1
 ]).
 
 -define(API_VERSION, "2011-01-01").
@@ -84,14 +84,13 @@
 -define(RECORD_LIFECYCLE_ACTION_HEARTBEAT_ACTIVITY, 
         "/RecordLifecycleActionHeartbeatResponse/ResponseMetadata/RequestId").
 
+    
 -type filter_list() :: [{string() | atom(),[string()] | string()}] | none.
 -type ok_error() :: ok | {error, term()}.
 -type query_opts() :: #{
     api_version => string(),
-    filter => filter_list(),
     response_format => map | none
 }.
-
 
 %% --------------------------------------------------------------------
 %% @doc Calls describe_groups([], default_configuration())
@@ -773,29 +772,6 @@ extract_as_activity(A) ->
 get_text(Label, Doc) ->
     erlcloud_xml:get_text(Label, Doc).
 
-%% @TODO:  spec is too general with terms I think
--spec as_query(aws_config(), string(), list({string(), term()}), string()) -> {ok, #xmlElement{}} | {error, term()}.
-as_query(Config, Action, Params, ApiVersion) ->
-    QParams = [{"Action", Action}, {"Version", ApiVersion}|Params],
-    erlcloud_aws:aws_request_xml4(post, Config#aws_config.as_host,
-                                  "/", QParams, "autoscaling", Config).
-
-
--spec query(aws_config(), string(), map(), query_opts()) -> ok_error().
-query(Config, Action, Params, Opts) ->
-    ApiVersion= maps:get(version, Opts, ?API_VERSION),
-    Filter = maps:get(filter, Opts, []),
-    ResponseFormat = maps:get(response_format, Opts, undef),
-    erlcloud_aws:parse_response(do_query(Config, Action, Params, Filter, ApiVersion), ResponseFormat).
-
-do_query(Config, Action, MapParams, Filter, ApiVersion) -> 
-    Params = erlcloud_as:prepare_action_params(MapParams, Filter),
-    case as_query(Config, Action, Params, ApiVersion) of
-        {ok, Results} ->
-            {ok, Results};
-        {error, _} = E -> E
-    end.
-
 when_defined(Value, Return, DefaultReturn) ->
 
     case Value of 
@@ -821,3 +797,29 @@ tag_to_member_param(#aws_autoscaling_tag{
       when_defined(ResourceId, {Prefix ++ "ResourceId", ResourceId}, []),
       when_defined(ResourceType, {Prefix ++ "ResourceType", ResourceType}, [])
     ].
+
+%% @TODO:  spec is too general with terms I think
+-spec as_query(aws_config(), string(), list({string(), term()}), string()) -> {ok, #xmlElement{}} | {error, term()}.
+as_query(Config, Action, Params, ApiVersion) ->
+    QParams = [{"Action", Action}, {"Version", ApiVersion}|Params],
+    erlcloud_aws:aws_request_xml4(post, Config#aws_config.as_host,
+                                  "/", QParams, "autoscaling", Config).
+
+-spec query(aws_config(), string(), map(), query_opts()) -> ok_error().
+query(Config, Action, Params, Opts) ->
+    ApiVersion= maps:get(version, Opts, ?API_VERSION),
+    ResponseFormat = maps:get(response_format, Opts, undef),
+    erlcloud_aws:parse_response(do_query(Config, Action, Params, ApiVersion), ResponseFormat).
+
+prepare_action_params(ParamsMap) when is_map(ParamsMap) ->
+    erlcloud_aws:process_params(ParamsMap, <<>>, "member").
+
+do_query(Config, Action, MapParams, ApiVersion) -> 
+    Params = prepare_action_params(MapParams),
+    case as_query(Config, Action, Params, ApiVersion) of
+        {ok, Results} ->
+            {ok, Results};
+        {error, _} = E -> E
+    end.
+
+
