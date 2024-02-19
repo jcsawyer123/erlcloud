@@ -137,7 +137,7 @@ do_xml_to_map(#xmlElement{name = Name, content = []}) ->
     case Name2 of
         %% consider element names with suffix "*Set" to be a list type
         [$t, $e, $S | _] ->
-            {ok, Name, []};
+            {ok, {Name, []}};
         _ ->
         %% consider everything else to be an empty string
         %% we may make a statement in the docs that an empty list maybe returned
