@@ -3596,7 +3596,7 @@ query(Config, Action, Params, Opts) ->
     % NewOpts = maps:merge(?OPT_DEFAULTS, Params),
     ApiVersion= maps:get(version, Opts, ?NEW_API_VERSION),
     Filter = maps:get(filter, Opts, []),
-    ResponseFormat = maps:get(response_format, Opts, none),
+    ResponseFormat = maps:get(response_format, Opts, undef),
     erlcloud_aws:parse_response(do_query(Config, Action, Params, Filter, ApiVersion), ResponseFormat).
 
 do_query(Config, Action, MapParams, Filter, ApiVersion) -> 
