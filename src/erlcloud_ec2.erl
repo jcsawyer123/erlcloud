@@ -3589,13 +3589,14 @@ ec2_query(Config, Action, Params, ApiVersion) ->
 %   - an ec2 action string: list of possible are found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/OperationList-query-ec2.html
 % - a map of query parameters: An example can be found here https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
     % NOTE: Any fields in the documentation that end in ".N", may just store a list - No need to include ".N".   
+% - Params that have dry_run enabled, will return a 412 from AWS to denote a successful dry-run.
 
 -spec query(aws_config(), string(), map(), query_opts()) -> ok_error().
 query(Config, Action, Params, Opts) ->
     % NewOpts = maps:merge(?OPT_DEFAULTS, Params),
     ApiVersion= maps:get(version, Opts, ?NEW_API_VERSION),
     Filter = maps:get(filter, Opts, []),
-    ResponseFormat = maps:get(response_format, Opts, undef),
+    ResponseFormat = maps:get(response_format, Opts, none),
     erlcloud_aws:parse_response(do_query(Config, Action, Params, Filter, ApiVersion), ResponseFormat).
 
 do_query(Config, Action, MapParams, Filter, ApiVersion) -> 
@@ -3603,6 +3604,7 @@ do_query(Config, Action, MapParams, Filter, ApiVersion) ->
     case ec2_query(Config, Action, Params, ApiVersion) of
         {ok, Results} ->
             {ok, Results};
+        % AWS will return a 412 if a dry run is performed and is successful
         {error, {http_error, 412, _, _}} -> 
             {ok, dry_run_success};
         {error, _} = E -> E
