@@ -1584,7 +1584,7 @@ parse_response({error, _} = ErrRes, _Format) ->
 concat_key(<<>>, Key) when is_bitstring(Key); is_atom(Key)  ->
     to_bitstring(Key);
 concat_key(<<>>, Key) when is_list(Key) -> 
-    Key;
+    list_to_bitstring(Key);
 concat_key(ParentKey, Key) ->
     BiParentKey = to_bitstring(ParentKey),
     BiKey = to_bitstring(Key),
