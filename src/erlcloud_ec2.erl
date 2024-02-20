@@ -209,9 +209,9 @@
 
          describe_launch_template_versions_all/2, describe_launch_template_versions_all/3,
 
-        % Generic Action handler
-        private_ip_params/1, prepare_action_params/2,
-        query/4
+         % Generic Action handler
+         private_ip_params/1, prepare_action_params/2,
+         query/4
     ]).
 
 -import(erlcloud_xml, [get_text/1, get_text/2, get_text/3, get_bool/2, get_list/2, get_integer/2]).
