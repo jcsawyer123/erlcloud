@@ -807,7 +807,7 @@ as_query(Config, Action, Params, ApiVersion) ->
 -spec query(aws_config(), string(), map(), query_opts()) -> ok_error().
 query(Config, Action, Params, Opts) ->
     ApiVersion= maps:get(version, Opts, ?API_VERSION),
-    ResponseFormat = maps:get(response_format, Opts, undef),
+    ResponseFormat = maps:get(response_format, Opts, none),
     erlcloud_aws:parse_response(do_query(Config, Action, Params, ApiVersion), ResponseFormat).
 
 prepare_action_params(ParamsMap) when is_map(ParamsMap) ->
