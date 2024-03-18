@@ -159,6 +159,8 @@ do_xml_to_map(#xmlElement{name = Name, content = Content}) ->
             [{item, _} | _] ->
                 %% raise an exception if the list contains anything else than "item"
                 [ begin {item, V} = T, V end || T <- L ];
+            [{member, _} | _] ->
+                [ begin {member, V} = T, V end || T <- L ];
             _ ->
                 maps:from_list(L)
         end,
