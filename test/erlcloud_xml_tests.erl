@@ -27,7 +27,35 @@ base_tests() ->
     ?assertEqual(true, true).
 
 parse_xml_test(_) ->
-    Xml = <<"<DescribeInstancesResponse xmlns='http://ec2.amazonaws.com/doc/2016-11-15/'><requestId>8f7724cf-496f-496e-8fe3-example</requestId><reservationSet><item><reservationId>r-1234567890abcdef0</reservationId><ownerId>123456789012</ownerId><groupSet/><instancesSet><item><instanceId>i-1234567890abcdef0</instanceId><imageId>ami-bff32ccc</imageId></item></instancesSet></item><item><reservationId>r-abc</reservationId><ownerId>123456789012</ownerId><groupSet/><instancesSet><item><instanceId>i-abc</instanceId><imageId>ami-bff32ccc</imageId></item></instancesSet></item></reservationSet></DescribeInstancesResponse>">>,    XmerlRaw = xmerl_scan:string(binary_to_list(Xml)), % Parse into xmerl structure
+    Xml = 
+    "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">
+        <requestId>8f7724cf-496f-496e-8fe3-example</requestId>
+        <reservationSet>
+            <item>
+                <reservationId>r-1234567890abcdef0</reservationId>
+                <ownerId>123456789012</ownerId>
+                <groupSet/>
+                <instancesSet>
+                    <item>
+                        <instanceId>i-1234567890abcdef0</instanceId>
+                        <imageId>ami-bff32ccc</imageId>
+                    </item>
+                </instancesSet>
+            </item>
+            <item>
+                <reservationId>r-abc</reservationId>
+                <ownerId>123456789012</ownerId>
+                <groupSet/>
+                <instancesSet>
+                    <item>
+                        <instanceId>i-abc</instanceId>
+                        <imageId>ami-bff32ccc</imageId>
+                    </item>
+                </instancesSet>
+            </item>
+        </reservationSet>
+    </DescribeInstancesResponse>", 
+    XmerlRaw = xmerl_scan:string(Xml), % Parse into xmerl structure
     Xmerl = element(1,XmerlRaw),
     Result = erlcloud_xml:xml_to_map(Xmerl),
     Expected = {ok,#{'DescribeInstancesResponse' =>

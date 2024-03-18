@@ -1912,19 +1912,40 @@ ec2_query_test_map() ->
             <launchTemplateId>lt-0a20c965061f64abc</launchTemplateId>
             <launchTemplateName>MyLaunchTemplate</launchTemplateName>
         </item>
+        <item>
+            <createTime>2017-10-31T11:38:52.000Z</createTime>
+            <createdBy>arn:aws:iam::123456789012:root</createdBy>
+            <defaultVersionNumber>1</defaultVersionNumber>
+            <latestVersionNumber>1</latestVersionNumber>
+            <launchTemplateId>lt-01234</launchTemplateId>
+            <launchTemplateName>abcTemplate</launchTemplateName>
+        </item>
     </launchTemplates>
     </DescribeLaunchTemplatesResponse>",
     XMERL = {ok, element(1, xmerl_scan:string(XML))},
-    ExpectedResult = {ok, #{'DescribeLaunchTemplatesResponse' =>
-                        #{requestId => <<"1afa6e44-eb38-4229-8db6-d5eaexample">>,
-                        launchTemplates =>
-                            [#{createTime => <<"2017-10-31T11:38:52.000Z">>,
-                                createdBy => <<"arn:aws:iam::123456789012:root">>,
-                                launchTemplateId => <<"lt-0a20c965061f64abc">>,
-                                launchTemplateName => <<"MyLaunchTemplate">>,
-                                defaultVersionNumber => <<"1">>,
-                                latestVersionNumber => <<"1">>}]}}
-    },
+    ExpectedResult = {ok,#{'DescribeLaunchTemplatesResponse' =>
+                           #{requestId =>
+                                 <<"1afa6e44-eb38-4229-8db6-d5eaexample">>,
+                             launchTemplates =>
+                                 [#{createTime =>
+                                        <<"2017-10-31T11:38:52.000Z">>,
+                                    createdBy =>
+                                        <<"arn:aws:iam::123456789012:root">>,
+                                    defaultVersionNumber => <<"1">>,
+                                    latestVersionNumber => <<"1">>,
+                                    launchTemplateId =>
+                                        <<"lt-0a20c965061f64abc">>,
+                                    launchTemplateName =>
+                                        <<"MyLaunchTemplate">>},
+                                  #{createTime =>
+                                        <<"2017-10-31T11:38:52.000Z">>,
+                                    createdBy =>
+                                        <<"arn:aws:iam::123456789012:root">>,
+                                    defaultVersionNumber => <<"1">>,
+                                    latestVersionNumber => <<"1">>,
+                                    launchTemplateId => <<"lt-01234">>,
+                                    launchTemplateName =>
+                                        <<"abcTemplate">>}]}}},
     meck:new(erlcloud_aws, [passthrough]),
     meck:expect(erlcloud_aws, aws_request_xml4,
         fun(_,_,_,_,_,_,_,_) ->
