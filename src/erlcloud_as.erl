@@ -811,7 +811,7 @@ query(Config, Action, Params, Opts) ->
     erlcloud_aws:parse_response(do_query(Config, Action, Params, ApiVersion), ResponseFormat).
 
 prepare_action_params(ParamsMap) when is_map(ParamsMap) ->
-    erlcloud_aws:process_params(ParamsMap, <<>>, "member").
+    erlcloud_aws:process_params(ParamsMap, <<>>, <<"member">>).
 
 do_query(Config, Action, MapParams, ApiVersion) -> 
     Params = prepare_action_params(MapParams),

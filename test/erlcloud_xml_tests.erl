@@ -3,30 +3,23 @@
 -include("erlcloud.hrl").
 
 start() ->
-    meck:new(erlcloud_httpc),
     ok.
 
 stop(_) ->
-    meck:unload(erlcloud_httpc).
-
+    ok.
 
 xml_test_() ->
     {foreach, 
     fun start/0, 
     fun stop/1, 
     [
-        fun base_tests/0,
-        fun parse_xml_test/1
+        fun parse_xml_test/0
     ]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% 
 
-
-base_tests() ->
-    ?assertEqual(true, true).
-
-parse_xml_test(_) ->
+parse_xml_test() ->
     Xml = 
     "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">
         <requestId>8f7724cf-496f-496e-8fe3-example</requestId>

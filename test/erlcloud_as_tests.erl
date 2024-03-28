@@ -21,15 +21,24 @@ autoscaling_test_() ->
       fun terminate_tests/1,
       fun create_tests/1,
       fun detach_instances_tests/1,
-      fun lifecycle_hooks_tests/1,
-      fun as_query_test_xmerl/0,
-      fun as_query_test_map/0
+      fun lifecycle_hooks_tests/1
     ]}.
+
+autoscaling_query_test_() ->
+  {foreach,
+   fun start2/0,
+   fun stop/1,
+   [fun as_query_test_xmerl/0,
+    fun as_query_test_map/0
+   ]}.
 
 start() ->
     meck:new(erlcloud_aws, [non_strict]),
     mocked_aws_xml().
 
+start2() ->
+    meck:new(erlcloud_aws, [passthrough]).
+    
 stop(_) ->
     meck:unload(erlcloud_aws).
 
@@ -119,18 +128,15 @@ as_query_test_xmerl() ->
       </ResponseMetadata>
     </DescribeTagsResponse>",
   XMERL = {ok, element(1, xmerl_scan:string(XML))},
-  meck:unload(erlcloud_aws),
-  meck:new(erlcloud_aws, [passthrough]),
   meck:expect(erlcloud_aws, aws_request_xml4,
-      fun(_,_,_,_,_,_,_,_) ->
+      fun(_,_,_,_,_,_) ->
           XMERL
       end),
   Conf = #aws_config{},
   Action = <<"DescribeTags">>,
   Params = #{},
   Opts = #{},
-  Result = erlcloud_ec2:query(Conf, Action, Params, Opts),
-  meck:unload(erlcloud_aws),
+  Result = erlcloud_as:query(Conf, Action, Params, Opts),
   ?assertEqual(XMERL, Result).
 
 as_query_test_map() ->
@@ -182,8 +188,6 @@ as_query_test_map() ->
                   }
             }
     }}, 
-    meck:unload(erlcloud_aws),
-    meck:new(erlcloud_aws, [passthrough]),
     meck:expect(erlcloud_aws, aws_request_xml4,
         fun(_,_,_,_,_,_) ->
             XMERL
@@ -195,7 +199,6 @@ as_query_test_map() ->
         response_format => map
     },
     Result = erlcloud_as:query(Conf, Action, Params, Opts),
-    meck:unload(erlcloud_aws),
     ?assertEqual(ExpectedResult, Result).
 
 
